@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Projektbeschreibung
 
-MCP Server der Context Rot in Claude Code bekämpft. Er legt in jedem Zielprojekt einen `.claude-memory/`-Ordner an und stellt 5 Tools bereit mit denen Claude Wissen persistiert, lädt und sucht. SessionStart Hook lädt automatisch den aktuellen Arbeitsstand.
+MCP Server der Context Rot in Claude Code bekämpft. Er legt in jedem Zielprojekt einen `.claude-memory/`-Ordner an und stellt 2 Tools bereit mit denen Claude Wissen persistiert und lädt. SessionStart Hook lädt automatisch den aktuellen Arbeitsstand.
 
 ## Commands
 
@@ -19,28 +19,23 @@ npm start            # Server starten (stdio)
 
 ```
 src/
-├── index.ts                  # MCP Server Bootstrap + Transport (v0.3.0)
+├── index.ts                  # MCP Server Bootstrap + Transport (v0.4.0)
 ├── hooks/
 │   └── session-start.ts      # SessionStart Hook — lädt current-task + Topic-Liste
 ├── memory/
 │   ├── store.ts              # Dateisystem-Abstraktion für .claude-memory/
-│   ├── relevance.ts          # Scoring-Engine (Trigrams + Substring + Stoppwörter)
 │   └── initializer.ts        # Auto-Init: Projekterkennung + Standard-Einträge
 └── tools/
-    ├── memory-tools.ts       # memory_load, memory_save (2 Tools)
-    ├── session-tools.ts      # checkpoint, session_end (2 Tools)
-    └── search-tools.ts       # memory_search (1 Tool)
+    ├── memory-tools.ts       # memory (1 Tool: read/write/append/delete)
+    └── session-tools.ts      # checkpoint (1 Tool)
 ```
 
-## Tools (5 total)
+## Tools (2 total)
 
 | Tool | Beschreibung |
 |------|-------------|
-| `memory_load(topic?)` | Ohne Topic: Liste + Stats + Diff (24h). Mit Topic: Entry laden |
-| `memory_save(topic, content, tags?, mode?)` | mode: "write" (default), "append", "delete". Auto-Init beim ersten Schreiben |
-| `memory_search(query, maxResults?, mode?)` | mode: "search" (Volltext), "suggest" (Relevanz-Ranking für Aufgabe) |
-| `checkpoint(summary, nextSteps?, blockers?)` | Arbeitsstand in current-task speichern |
-| `session_end(accomplishments, decisions?, nextSession?)` | Session archivieren + alte Sessions auto-komprimieren |
+| `memory(topic?, content?, mode?, tags?)` | Ohne topic: Übersicht. Mit topic ohne content: lesen. Mit content: write/append/delete. Auto-Init beim ersten Schreiben |
+| `checkpoint(summary, nextSteps?, blockers?)` | Arbeitsstand in current-task speichern (überschreibt, letzter Stand zählt) |
 
 ## SessionStart Hook
 
@@ -61,7 +56,7 @@ Inhalt hier...
 
 **Topic-Pfade:** Slashes werden zu Unterordnern — `"entities/UserService"` → `.claude-memory/entities/UserService.md`
 
-**Auto-Init:** Beim ersten `memory_save` wird `.claude-memory/` automatisch mit architecture, decisions und current-task initialisiert.
+**Auto-Init:** Beim ersten Schreiben wird `.claude-memory/` automatisch mit architecture, decisions und current-task initialisiert.
 
 ## In Claude Code einbinden (nach dem Build)
 
@@ -86,7 +81,6 @@ Der Server liest `process.cwd()` — er muss also aus dem Ziel-Projektordner her
 
 - Session-Start: Hook lädt automatisch current-task + Topic-Liste
 - Nach wichtigen Änderungen: `checkpoint` aufrufen
-- Neue Entscheidungen: `memory_save("decisions", "...", [], "append")`
-- Löschen: `memory_save("topic", "", [], "delete")`
-- Session-Ende: `session_end` aufrufen
+- Neue Entscheidungen: `memory("decisions", "...", "append")`
+- Löschen: `memory("topic", "", "delete")`
 ```

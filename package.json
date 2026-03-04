@@ -1,6 +1,6 @@
 {
   "name": "ninos-claude-memory-mcp",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "MCP server for Claude Code that prevents context rot — by ninodinoo",
   "type": "module",
   "main": "dist/index.js",

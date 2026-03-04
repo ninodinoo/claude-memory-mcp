@@ -10,118 +10,58 @@ import { initMemory } from "../memory/initializer.js";
 export function registerMemoryTools(server: McpServer): void {
 
   server.registerTool(
-    "memory_load",
+    "memory",
     {
-      title: "Memory laden",
+      title: "Memory verwalten",
       description:
-        "Lädt den gespeicherten Wissensstand zu einem Thema. " +
-        "Rufe dies am Anfang einer Session oder vor einer neuen Aufgabe auf. " +
-        "topic-Beispiele: 'architecture', 'decisions', 'current-task', 'entities/auth'",
+        "Liest, schreibt, hängt an oder löscht Memory-Einträge. " +
+        "Ohne topic: Übersicht aller Topics. Mit topic ohne content: Eintrag lesen. " +
+        "Mit topic + content: Eintrag schreiben/anhängen/löschen.",
       inputSchema: z.object({
-        topic: z.string().describe("Thema / Pfad des Memory-Eintrags. Leer lassen für Übersicht aller Topics + Stats").default(""),
+        topic: z.string().default("").describe(
+          "Thema / Pfad, z.B. 'decisions', 'architecture', 'entities/auth'. Leer = Übersicht"
+        ),
+        content: z.string().default("").describe(
+          "Markdown-Inhalt. Leer lassen zum Lesen."
+        ),
+        mode: z.enum(["write", "append", "delete"]).default("write").describe(
+          "write: überschreiben, append: anhängen, delete: löschen. Nur relevant wenn content gesetzt."
+        ),
+        tags: z.array(z.string()).default([]).describe("Optionale Schlagwörter"),
       }),
     },
-    async ({ topic }) => {
+    async ({ topic, content, mode, tags }) => {
+      // Auto-Init beim ersten Schreiben
+      if (!(await memoryExists()) && content) {
+        await initMemory();
+      }
       await ensureDir(getMemoryRoot());
 
-      // Ohne Topic: Liste + Stats
+      // Ohne Topic: Übersicht
       if (!topic) {
         const topics = await listTopics();
         if (topics.length === 0) {
           return { content: [{ type: "text" as const, text: "Noch keine Memory-Einträge vorhanden." }] };
         }
 
-        let totalChars = 0;
         const results = await Promise.all(
           topics.map(async (t) => ({ topic: t, entry: await readEntry(t) }))
         );
-        const entries: { topic: string; accessCount: number; updated: string; chars: number }[] = [];
+        const entries = results
+          .filter((r) => r.entry !== null)
+          .map((r) => ({
+            topic: r.topic,
+            updated: r.entry!.meta.updated,
+            chars: r.entry!.content.length,
+          }));
 
-        for (const { topic: t, entry } of results) {
-          if (!entry) continue;
-          const chars = entry.content.length;
-          totalChars += chars;
-          entries.push({ topic: t, accessCount: entry.meta.accessCount, updated: entry.meta.updated, chars });
-        }
-
-        const top5ByAccess = [...entries].sort((a, b) => b.accessCount - a.accessCount).slice(0, 5);
-        const top5ByRecent = [...entries].sort((a, b) => b.updated.localeCompare(a.updated)).slice(0, 5);
-
-        // Recent changes (last 24h)
-        const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
-        const recentChanges = entries
-          .filter(e => new Date(e.updated) >= since24h)
-          .sort((a, b) => b.updated.localeCompare(a.updated));
-
-        let text = `# Memory-Übersicht\n\n`;
-        text += `- **Einträge:** ${entries.length}\n`;
-        text += `- **Gesamtgröße:** ${totalChars.toLocaleString()} Zeichen\n\n`;
-
-        text += `## Alle Topics\n\n`;
-        text += entries.map(e => `- ${e.topic}`).join("\n");
-
-        text += `\n\n## Top 5 nach Zugriffshäufigkeit\n\n`;
-        for (const e of top5ByAccess) {
-          text += `- \`${e.topic}\` — ${e.accessCount} Zugriffe (${e.chars} Zeichen)\n`;
-        }
-
-        text += `\n## Top 5 zuletzt geändert\n\n`;
-        for (const e of top5ByRecent) {
-          text += `- \`${e.topic}\` — ${e.updated}\n`;
-        }
-
-        if (recentChanges.length > 0) {
-          text += `\n## Änderungen letzte 24h\n\n`;
-          for (const c of recentChanges) {
-            text += `- **${c.topic}** — ${c.updated}\n`;
-          }
-        }
+        let text = `# Memory — ${entries.length} Einträge\n\n`;
+        text += entries.map((e) => `- **${e.topic}** (${e.chars} Zeichen, ${e.updated.slice(0, 10)})`).join("\n");
 
         return { content: [{ type: "text" as const, text }] };
       }
 
-      // Mit Topic: Entry laden
-      const entry = await readEntry(topic);
-      if (!entry) {
-        return {
-          content: [{ type: "text" as const, text: `Kein Memory-Eintrag für '${topic}' gefunden.` }],
-        };
-      }
-      await touchEntry(topic);
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `# Memory: ${topic}\n\nZuletzt aktualisiert: ${entry.meta.updated}\nAbrufe: ${entry.meta.accessCount + 1}\n\n---\n\n${entry.content}`,
-          },
-        ],
-      };
-    }
-  );
-
-  server.registerTool(
-    "memory_save",
-    {
-      title: "Memory speichern",
-      description:
-        "Speichert oder überschreibt Wissen zu einem Thema. " +
-        "Nutze dies nach Entscheidungen, Architekturänderungen oder wichtigen Erkenntnissen.",
-      inputSchema: z.object({
-        topic: z.string().describe("Thema / Pfad, z.B. 'decisions', 'architecture', 'entities/UserService'"),
-        content: z.string().default("").describe("Der zu speichernde Markdown-Inhalt (nicht nötig bei mode='delete')"),
-        tags: z.array(z.string()).default([]).describe("Optionale Schlagwörter zur Kategorisierung"),
-        mode: z.enum(["write", "append", "delete"]).default("write").describe("write: überschreiben, append: anhängen, delete: löschen"),
-      }),
-    },
-    async ({ topic, content, tags, mode }) => {
-      // Auto-Init: Beim ersten Schreiben automatisch initialisieren
-      const exists = await memoryExists();
-      if (!exists) {
-        await initMemory();
-      }
-
-      await ensureDir(getMemoryRoot());
-
+      // Delete
       if (mode === "delete") {
         const existing = await readEntry(topic);
         if (!existing) {
@@ -131,14 +71,30 @@ export function registerMemoryTools(server: McpServer): void {
         return { content: [{ type: "text" as const, text: `Memory '${topic}' gelöscht.` }] };
       }
 
+      // Read (topic gesetzt, kein content)
+      if (!content) {
+        const entry = await readEntry(topic);
+        if (!entry) {
+          return { content: [{ type: "text" as const, text: `Kein Memory-Eintrag für '${topic}' gefunden.` }] };
+        }
+        await touchEntry(topic);
+        return {
+          content: [{
+            type: "text" as const,
+            text: `# ${topic}\n\n_Aktualisiert: ${entry.meta.updated}_\n\n---\n\n${entry.content}`,
+          }],
+        };
+      }
+
+      // Append
       if (mode === "append") {
-        await appendEntry(topic, content, tags ?? []);
+        await appendEntry(topic, content, tags);
         return { content: [{ type: "text" as const, text: `Inhalt an '${topic}' angehängt.` }] };
       }
 
-      // mode === "write" (default)
-      await writeEntry(topic, content, tags ?? []);
-      return { content: [{ type: "text" as const, text: `Memory '${topic}' erfolgreich gespeichert.` }] };
+      // Write (default)
+      await writeEntry(topic, content, tags);
+      return { content: [{ type: "text" as const, text: `Memory '${topic}' gespeichert.` }] };
     }
   );
 }
