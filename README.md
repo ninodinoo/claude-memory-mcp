@@ -1,15 +1,16 @@
 <div align="center">
 
-# 🧠 claude-memory-mcp
+# 🧠 ninos-claude-memory-mcp
 
 **Stop losing your mind. Give Claude one.**
 
 An MCP server for [Claude Code](https://claude.ai/code) that fights **context rot** — the silent degradation of project knowledge as conversations grow longer.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT + Attribution](https://img.shields.io/badge/License-MIT%20%2B%20Attribution-yellow.svg)](https://github.com/ninodinoo/ninos-claude-memory-mcp/blob/master/LICENSE)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-blue)](https://modelcontextprotocol.io)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-green)](https://nodejs.org)
-[![GitHub](https://img.shields.io/badge/GitHub-ninodinoo%2Fclaude--memory--mcp-181717?logo=github)](https://github.com/ninodinoo/claude-memory-mcp)
+[![GitHub](https://img.shields.io/badge/GitHub-ninodinoo%2Fninos--claude--memory--mcp-181717?logo=github)](https://github.com/ninodinoo/ninos-claude-memory-mcp)
+[![Author](https://img.shields.io/badge/by-ninodinoo-orange)](https://github.com/ninodinoo)
 
 </div>
 
@@ -71,7 +72,7 @@ No clone. No build step. Just add this to `~/.claude/settings.json`:
   "mcpServers": {
     "claude-memory": {
       "command": "npx",
-      "args": ["-y", "github:ninodinoo/claude-memory-mcp"]
+      "args": ["-y", "github:ninodinoo/ninos-claude-memory-mcp"]
     }
   }
 }
@@ -84,7 +85,7 @@ Claude Code will download, build, and run the server automatically on first use.
 ### 🔧 Manual install (for development or offline use)
 
 ```bash
-git clone https://github.com/ninodinoo/claude-memory-mcp.git
+git clone https://github.com/ninodinoo/ninos-claude-memory-mcp.git
 cd claude-memory-mcp
 npm install && npm run build
 ```
@@ -234,10 +235,16 @@ This software is in active development. Breaking changes may occur between versi
 
 ## Contributing
 
-Issues and pull requests are welcome at [github.com/ninodinoo/claude-memory-mcp](https://github.com/ninodinoo/claude-memory-mcp).
+Issues and pull requests are welcome at [github.com/ninodinoo/ninos-claude-memory-mcp](https://github.com/ninodinoo/ninos-claude-memory-mcp).
 
 ---
 
 ## License
 
-[MIT](https://opensource.org/licenses/MIT) — use it, fork it, improve it.
+**MIT with Attribution** — free to use, modify, and distribute, with one condition:
+
+Any public fork, derivative work, or project that builds on this code must include a visible credit to the original author in its README or documentation:
+
+> Originally created by [ninodinoo](https://github.com/ninodinoo) — [ninos-claude-memory-mcp](https://github.com/ninodinoo/ninos-claude-memory-mcp)
+
+See the full [LICENSE](https://github.com/ninodinoo/ninos-claude-memory-mcp/blob/master/LICENSE) for details.

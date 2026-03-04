@@ -1,12 +1,20 @@
 {
-  "name": "claude-memory-mcp",
+  "name": "ninos-claude-memory-mcp",
   "version": "0.2.0",
-  "description": "MCP Server zur Bekämpfung von Context Rot in Claude Code",
+  "description": "MCP server for Claude Code that prevents context rot — by ninodinoo",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "claude-memory-mcp": "./dist/index.js"
+    "ninos-claude-memory-mcp": "./dist/index.js"
   },
+  "author": "ninodinoo (https://github.com/ninodinoo)",
+  "license": "MIT",
+  "homepage": "https://github.com/ninodinoo/ninos-claude-memory-mcp",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ninodinoo/ninos-claude-memory-mcp.git"
+  },
+  "keywords": ["mcp", "claude", "claude-code", "memory", "context", "ai-tools"],
   "scripts": {
     "build": "tsc",
     "prepare": "npm run build",
