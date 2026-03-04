@@ -151,8 +151,10 @@ async function compressOldSessions(olderThanDays: number): Promise<number> {
     .map((s) => `## ${s.updated.slice(0, 10)} — ${s.topic}\n\n${s.content}`)
     .join("\n\n---\n\n");
 
-  const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-  const archiveKey = `sessions/archive-${timestamp}`;
+  const now = new Date().toISOString();
+  const archiveDateStr = now.slice(0, 10);
+  const archiveTimeStr = now.slice(11, 19).replace(/:/g, "-");
+  const archiveKey = `sessions/archive-${archiveDateStr}-${archiveTimeStr}`;
   await writeEntry(archiveKey, archiveContent, ["archive", "compressed"]);
 
   // Alte Sessions löschen

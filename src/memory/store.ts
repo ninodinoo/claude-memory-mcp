@@ -59,6 +59,7 @@ export async function touchEntry(topic: string): Promise<void> {
   entry.meta.updated = new Date().toISOString();
   const file = topicToPath(topic);
   await fs.writeFile(file, serializeEntry(entry), "utf-8");
+  await updateIndex(topic, entry.meta.tags);
 }
 
 export async function listTopics(): Promise<string[]> {
@@ -72,7 +73,7 @@ export async function listTopics(): Promise<string[]> {
   }
 }
 
-export async function appendEntry(topic: string, content: string): Promise<void> {
+export async function appendEntry(topic: string, content: string, tags: string[] = []): Promise<void> {
   const root = getMemoryRoot();
   await ensureDir(root);
   const existing = await readEntry(topic);
@@ -80,14 +81,19 @@ export async function appendEntry(topic: string, content: string): Promise<void>
 
   if (existing) {
     const appended = `${existing.content}\n\n---\n_Angehängt: ${now}_\n\n${content}`;
+    const mergedTags = tags.length > 0
+      ? [...new Set([...existing.meta.tags, ...tags])]
+      : existing.meta.tags;
     const meta: MemoryMeta = {
       ...existing.meta,
+      tags: mergedTags,
       updated: now,
     };
     const file = topicToPath(topic);
     await fs.writeFile(file, serializeEntry({ meta, content: appended }), "utf-8");
+    await updateIndex(topic, mergedTags);
   } else {
-    await writeEntry(topic, content, []);
+    await writeEntry(topic, content, tags);
   }
 }
 

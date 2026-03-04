@@ -18,7 +18,7 @@ export function registerMemoryTools(server: McpServer): void {
         "Rufe dies am Anfang einer Session oder vor einer neuen Aufgabe auf. " +
         "topic-Beispiele: 'architecture', 'decisions', 'current-task', 'entities/auth'",
       inputSchema: z.object({
-        topic: z.string().optional().describe("Thema / Pfad des Memory-Eintrags. Ohne Topic: listet alle + Stats"),
+        topic: z.string().describe("Thema / Pfad des Memory-Eintrags. Leer lassen für Übersicht aller Topics + Stats").default(""),
       }),
     },
     async ({ topic }) => {
@@ -86,12 +86,11 @@ export function registerMemoryTools(server: McpServer): void {
         };
       }
       await touchEntry(topic);
-      const newCount = entry.meta.accessCount + 1;
       return {
         content: [
           {
             type: "text" as const,
-            text: `# Memory: ${topic}\n\nZuletzt aktualisiert: ${entry.meta.updated}\nAbrufe: ${newCount}\n\n---\n\n${entry.content}`,
+            text: `# Memory: ${topic}\n\nZuletzt aktualisiert: ${entry.meta.updated}\nAbrufe: ${entry.meta.accessCount + 1}\n\n---\n\n${entry.content}`,
           },
         ],
       };
@@ -131,7 +130,7 @@ export function registerMemoryTools(server: McpServer): void {
       }
 
       if (mode === "append") {
-        await appendEntry(topic, content);
+        await appendEntry(topic, content, tags ?? []);
         return { content: [{ type: "text" as const, text: `Inhalt an '${topic}' angehängt.` }] };
       }
 

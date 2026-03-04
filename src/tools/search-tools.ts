@@ -14,7 +14,7 @@ export function registerSearchTools(server: McpServer): void {
         "Gibt passende Einträge mit Kontext-Ausschnitt zurück.",
       inputSchema: z.object({
         query: z.string().describe("Suchbegriff (case-insensitive)"),
-        maxResults: z.number().optional().default(5).describe("Maximale Anzahl Ergebnisse"),
+        maxResults: z.number().int().min(1).max(50).default(5).describe("Maximale Anzahl Ergebnisse"),
         mode: z.enum(["search", "suggest"]).optional().default("search").describe("search: Volltextsuche, suggest: Relevanz-basierte Vorschläge für eine Aufgabe"),
       }),
     },
