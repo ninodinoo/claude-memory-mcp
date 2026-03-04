@@ -1,89 +1,109 @@
 <div align="center">
 
-# ninos-claude-memory-mcp
+<br />
 
-**Stop losing your mind. Give Claude one.**
+```
+   _____ _                 _        __  __
+  / ____| |               | |      |  \/  |
+ | |    | | __ _ _   _  __| | ___  | \  / | ___ _ __ ___   ___  _ __ _   _
+ | |    | |/ _` | | | |/ _` |/ _ \ | |\/| |/ _ \ '_ ` _ \ / _ \| '__| | | |
+ | |____| | (_| | |_| | (_| |  __/ | |  | |  __/ | | | | | (_) | |  | |_| |
+  \_____|_|\__,_|\__,_|\__,_|\___| |_|  |_|\___|_| |_| |_|\___/|_|   \__, |
+                                                                       __/ |
+                                                                      |___/
+```
 
-An MCP server for [Claude Code](https://claude.ai/code) that fights **context rot** — the silent degradation of project knowledge as conversations grow longer.
+**Claude never forgets where you left off.**
 
-[![License: MIT + Attribution](https://img.shields.io/badge/License-MIT%20%2B%20Attribution-yellow.svg)](https://github.com/ninodinoo/ninos-claude-memory-mcp/blob/master/LICENSE)
-[![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-blue)](https://modelcontextprotocol.io)
-[![Node.js](https://img.shields.io/badge/Node.js-18%2B-green)](https://nodejs.org)
-[![GitHub](https://img.shields.io/badge/GitHub-ninodinoo%2Fninos--claude--memory--mcp-181717?logo=github)](https://github.com/ninodinoo/ninos-claude-memory-mcp)
-[![Author](https://img.shields.io/badge/by-ninodinoo-orange)](https://github.com/ninodinoo)
+Persistent project memory for [Claude Code](https://claude.ai/code) via the Model Context Protocol.
+
+<br />
+
+[![MCP](https://img.shields.io/badge/MCP-Compatible-4A90D9?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSIxMCIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyIi8+PC9zdmc+)](https://modelcontextprotocol.io)
+[![Version](https://img.shields.io/badge/v0.4.0-stable-2ECC71?style=for-the-badge)](https://github.com/ninodinoo/ninos-claude-memory-mcp/releases)
+[![License](https://img.shields.io/badge/MIT-yellow?style=for-the-badge&label=license)](LICENSE)
+[![Node](https://img.shields.io/badge/18%2B-339933?style=for-the-badge&logo=node.js&logoColor=white&label=node)](https://nodejs.org)
+
+<br />
+
+[Problem](#the-problem) &nbsp;&bull;&nbsp; [How It Works](#how-it-works) &nbsp;&bull;&nbsp; [Installation](#installation) &nbsp;&bull;&nbsp; [Tools](#tools) &nbsp;&bull;&nbsp; [Usage](#usage) &nbsp;&bull;&nbsp; [License](#license)
+
+<br />
 
 </div>
 
 ---
 
+<br />
+
 ## The Problem
 
-Claude Code is powerful — but every session starts from zero. Over time, or as context fills up, critical knowledge fades:
+Claude Code has no memory between sessions. Every conversation starts from zero.
 
-- Architectural decisions get forgotten mid-project
-- Earlier context contradicts later responses
-- You repeat yourself across sessions
-- Claude loses the "why" behind code choices
+You spend an hour making architectural decisions, fixing bugs, establishing patterns — then close the terminal. Next session, all of that context is gone. You waste the first 10 minutes re-explaining what you already discussed yesterday.
 
-This is **context rot**. And it gets worse the larger your project becomes.
+This is **context rot**. It compounds over time, and it gets worse the larger your project becomes.
 
----
+<br />
 
-## The Solution
+## How It Works
 
-`ninos-claude-memory-mcp` gives Claude a **persistent memory layer** that lives inside your project. Claude can save, retrieve, and search knowledge across sessions — loading only what's relevant to the current task, never bloating the context window.
+This MCP server creates a `.claude-memory/` folder inside your project. Two focused tools let Claude persist and retrieve knowledge across sessions. A startup hook automatically loads the current work state — zero manual intervention.
 
 ```
-Your project/
-└── .claude-memory/        <- managed automatically by the plugin
-    ├── architecture.md    <- how the system is built
-    ├── decisions.md       <- why things are the way they are
-    ├── current-task.md    <- where we left off
-    ├── entities/          <- key components and modules
-    └── sessions/          <- archived session summaries
+your-project/
+├── src/
+├── package.json
+├── .claude-memory/                  # Created automatically on first use
+│   ├── index.json                   # Topic registry
+│   ├── architecture.md              # System design knowledge
+│   ├── decisions.md                 # Why choices were made
+│   ├── current-task.md              # Active work state (auto-loaded on session start)
+│   └── entities/                    # Nested topics via slash notation
+│       └── auth.md
+└── ...
 ```
 
----
+### Session Lifecycle
 
-## Features
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                                                                         │
+│   SESSION START              DURING WORK                SESSION END     │
+│                                                                         │
+│   ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐         │
+│   │   Hook   │    │  Claude  │    │  check-  │    │  check-  │         │
+│   │  auto-   │───▶│  works   │───▶│  point   │───▶│  point   │         │
+│   │  loads   │    │  with    │    │  saves   │    │  final   │         │
+│   │ context  │    │ context  │    │  state   │    │  state   │         │
+│   └──────────┘    └──────────┘    └──────────┘    └──────────┘         │
+│        │                                               │                │
+│   Reads from                                     Writes to              │
+│   .claude-memory/                                .claude-memory/        │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
 
-| | Feature | Description |
-|--|---------|-------------|
-| **Auto-Start** | **SessionStart Hook** | Automatically loads current task and topic list when you start a session |
-| **Auto-Init** | **Zero setup** | Memory structure is created automatically on first use — no `init` needed |
-| **Persistent** | **Persistent memory** | Knowledge survives session resets and context limits |
-| **Smart** | **Relevance scoring** | Trigram + substring matching ranks topics by relevance (works in any language) |
-| **Save** | **Session checkpoints** | Save progress mid-session — nothing gets lost |
-| **Archive** | **Auto-compress** | Old sessions are automatically compressed when you end a session |
-| **Search** | **Full-text search** | Find anything across all memory entries |
-| **Files** | **Human-readable files** | Plain Markdown — edit manually anytime, commit to share with your team |
-| **Local** | **100% local** | No external services, no cloud, no accounts required |
-
----
+<br />
 
 ## Installation
 
-### One-line setup (recommended)
-
-Run this in your terminal — no clone, no config file editing required:
+### Quick setup (recommended)
 
 ```bash
-claude mcp add ninos-claude-memory -s user -- npx -y github:ninodinoo/ninos-claude-memory-mcp
+claude mcp add ninos-claude-memory -s user -- npx -y ninos-claude-memory-mcp
 ```
 
-Claude Code downloads, builds, and connects to the server automatically.
+Claude Code downloads, builds, and connects automatically.
 
-Verify it's running:
+Verify:
 
 ```bash
 claude mcp list
+# Should show: ninos-claude-memory: connected
 ```
 
-You should see `ninos-claude-memory: ... Connected`. Then use `/mcp` inside Claude Code to confirm.
-
----
-
-### Manual install (for development or offline use)
+### From source
 
 ```bash
 git clone https://github.com/ninodinoo/ninos-claude-memory-mcp.git
@@ -91,141 +111,181 @@ cd ninos-claude-memory-mcp
 npm install && npm run build
 ```
 
-Then register it:
+Then register:
 
 ```bash
-claude mcp add ninos-claude-memory -s user -- node /absolute/path/to/ninos-claude-memory-mcp/dist/index.js
+claude mcp add ninos-claude-memory -s user -- node /absolute/path/to/dist/index.js
 ```
 
----
+### Register the SessionStart Hook
 
-### Restart Claude Code
+Add to your global `~/.claude/settings.json`:
 
-After adding the server, restart Claude Code. Use `/mcp` to confirm the server appears and is connected.
+```json
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "command": "node /absolute/path/to/dist/hooks/session-start.js",
+        "timeout": 5000
+      }
+    ]
+  }
+}
+```
 
----
+This auto-loads `current-task` and the topic list on every prompt — no manual loading needed.
 
-## Project setup
+<br />
 
-Add this snippet to your project's `CLAUDE.md` so Claude follows the memory workflow automatically:
+## Tools
+
+Two tools. That's it.
+
+### `memory`
+
+One tool for all memory operations. Behavior depends on what you pass:
+
+| Call | What happens |
+|------|-------------|
+| `memory()` | List all topics with size and last update |
+| `memory(topic: "architecture")` | Read a specific entry |
+| `memory(topic: "decisions", content: "...", mode: "write")` | Write / overwrite |
+| `memory(topic: "decisions", content: "...", mode: "append")` | Append to existing |
+| `memory(topic: "old-stuff", mode: "delete")` | Delete an entry |
+
+Auto-initializes `.claude-memory/` with `architecture`, `decisions`, and `current-task` on first write.
+
+**Parameters:**
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+| `topic` | `string` | `""` | Topic path. Empty = list all |
+| `content` | `string` | `""` | Markdown content. Empty = read |
+| `mode` | `write \| append \| delete` | `write` | Write mode |
+| `tags` | `string[]` | `[]` | Optional tags |
+
+### `checkpoint`
+
+Save current work state. Overwrites `current-task` — last state wins, no bloat.
+
+```
+checkpoint(
+  summary: "Auth module done with JWT + refresh tokens",
+  nextSteps: ["Add rate limiting", "Write integration tests"]
+)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `summary` | `string` | Yes | What was accomplished |
+| `nextSteps` | `string[]` | No | Planned next actions |
+| `blockers` | `string[]` | No | Open questions or blockers |
+
+<br />
+
+## Usage
+
+Add this to your project's `CLAUDE.md`:
 
 ```markdown
 ## Memory
 
-The SessionStart hook automatically loads current-task and topic list at the start of every session.
-
-During work:
-- Call `checkpoint` after every significant change
-- Call `memory_save("decisions", "...", [], "append")` for architectural or design choices
-- Call `memory_search("query", 5, "suggest")` to find relevant topics for your current task
-
-At the end of every session:
-- Call `session_end` to archive before context fills up
+- Session start automatically loads current work state via hook
+- After significant changes: call `checkpoint`
+- Save decisions: `memory("decisions", "new decision here...", "append")`
+- Delete obsolete entries: `memory("old-topic", "", "delete")`
 ```
 
----
+### Topics
 
-## Available Tools (5)
-
-### Core memory
-
-| Tool | Description |
-|------|-------------|
-| `memory_load(topic?)` | Without topic: shows all topics + stats + recent changes. With topic: loads the entry |
-| `memory_save(topic, content, tags?, mode?)` | Save (`"write"`), append (`"append"`), or delete (`"delete"`) a memory entry. Auto-initializes on first use |
-
-### Search & discovery
-
-| Tool | Description |
-|------|-------------|
-| `memory_search(query, maxResults?, mode?)` | `"search"`: full-text search. `"suggest"`: AI-ranked topic suggestions for your current task |
-
-### Session management
-
-| Tool | Description |
-|------|-------------|
-| `checkpoint(summary, nextSteps?, blockers?)` | Save a progress snapshot to current-task |
-| `session_end(accomplishments, decisions?, nextSession?)` | Archive the current session + auto-compress sessions older than 7 days |
-
----
-
-## SessionStart Hook
-
-The plugin includes a **SessionStart hook** that automatically injects context when you start working:
-
-- **Current task**: Shows where you left off last session
-- **Topic list**: Lists all available memory entries
-
-The hook is registered in `.claude/settings.json` and fires on `UserPromptSubmit`. It reads directly from `.claude-memory/` — no MCP calls needed.
-
----
-
-## Topic naming
-
-Topics map to Markdown files inside `.claude-memory/`. Slashes create subfolders:
+Topics map to Markdown files. Slashes create subdirectories:
 
 | Topic | File |
 |-------|------|
-| `current-task` | `.claude-memory/current-task.md` |
 | `architecture` | `.claude-memory/architecture.md` |
 | `decisions` | `.claude-memory/decisions.md` |
-| `entities/AuthService` | `.claude-memory/entities/AuthService.md` |
-| `sessions/2025-01-15` | `.claude-memory/sessions/2025-01-15.md` |
+| `current-task` | `.claude-memory/current-task.md` |
+| `entities/auth` | `.claude-memory/entities/auth.md` |
 
----
+### Data Format
 
-## Memory file format
+Every entry is plain Markdown with a metadata header:
 
-Every entry is plain Markdown with a small metadata header:
+```markdown
+<!-- META:{"created":"2026-01-01T10:00:00Z","updated":"2026-01-15T14:30:00Z","accessCount":5,"tags":["core"]} -->
 
-```
-<!-- META:{"created":"2025-01-01T10:00:00Z","updated":"2025-01-15T14:30:00Z","accessCount":12,"tags":["architecture"]} -->
+# Authentication Architecture
 
-## Architecture Overview
-
-We use a monorepo structured around domain boundaries...
+JWT-based auth with refresh token rotation...
 ```
 
-Files are fully human-readable and can be edited, committed, or deleted at any time.
+Files are human-readable, editable, and committable. Add `.claude-memory/` to `.gitignore` to keep it personal, or commit it to share context with your team.
 
-**Team usage:** Commit `.claude-memory/` to share project memory with your team. Add it to `.gitignore` to keep it personal.
+<br />
 
----
+## Security
+
+- **Path traversal protection** — Topics with `../` are blocked and auto-cleaned from the index
+- **100% local** — No cloud, no external services, no network calls
+- **No secrets** — The server never reads or stores credentials
+
+<br />
+
+## Architecture
+
+```
+src/
+├── index.ts              # MCP server bootstrap (stdio transport)
+├── hooks/
+│   └── session-start.ts  # SessionStart hook (standalone Node.js script)
+├── memory/
+│   ├── store.ts          # Filesystem abstraction + path safety + auto-healing index
+│   └── initializer.ts    # Project detection + initial topic scaffolding
+└── tools/
+    ├── memory-tools.ts   # memory — read, write, append, delete, list
+    └── session-tools.ts  # checkpoint — save work state
+```
+
+### Design Principles
+
+| Principle | Implementation |
+|-----------|---------------|
+| **Minimal surface** | 2 tools, not 12. Less for Claude to learn, fewer tokens wasted |
+| **File-based** | Plain Markdown. No database, no cloud, no lock-in. `cat` works |
+| **Auto-healing** | Corrupt metadata recovers gracefully. Invalid index entries are cleaned on read |
+| **Zero config** | Detects project type (Node, Rust, Go, Python), creates structure on first use |
+| **Fail-safe hook** | SessionStart hook silently no-ops on errors — never blocks Claude from starting |
+
+<br />
 
 ## Requirements
 
-- **Node.js** 18 or higher
-- **Claude Code** with MCP support ([claude.ai/code](https://claude.ai/code))
+- **Node.js** 18+
+- **Claude Code** with MCP support
 
----
+<br />
 
 ## Disclaimer
 
-This project is provided **as-is**, without warranty of any kind. The author is not responsible for:
+This project is provided **as-is**, without warranty of any kind. Memory entries are generated by Claude — treat them as helpful notes, not ground truth. Always review content before relying on it for critical decisions.
 
-- Loss of data stored in `.claude-memory/`
-- Incorrect or outdated information loaded into Claude's context
-- Any decisions made based on memory content generated or stored by this tool
-- Unexpected behavior resulting from MCP protocol changes in Claude Code
-
-**Always review memory content before relying on it for critical decisions.** Memory entries are generated by Claude itself — treat them as helpful notes, not ground truth.
-
-This software is in active development. Breaking changes may occur between versions.
-
----
+<br />
 
 ## Contributing
 
-Issues and pull requests are welcome at [github.com/ninodinoo/ninos-claude-memory-mcp](https://github.com/ninodinoo/ninos-claude-memory-mcp).
+Issues and pull requests welcome at [github.com/ninodinoo/ninos-claude-memory-mcp](https://github.com/ninodinoo/ninos-claude-memory-mcp).
 
----
+<br />
 
 ## License
 
-**MIT with Attribution** — free to use, modify, and distribute, with one condition:
+**MIT with Attribution** — free to use, modify, and distribute.
 
-Any public fork, derivative work, or project that builds on this code must include a visible credit to the original author in its README or documentation:
+Public forks and derivative works must credit the original author:
 
 > Originally created by [ninodinoo](https://github.com/ninodinoo) — [ninos-claude-memory-mcp](https://github.com/ninodinoo/ninos-claude-memory-mcp)
 
-See the full [LICENSE](https://github.com/ninodinoo/ninos-claude-memory-mcp/blob/master/LICENSE) for details.
+See [LICENSE](LICENSE) for details.
