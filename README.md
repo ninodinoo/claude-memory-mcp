@@ -41,32 +41,35 @@ Only what's relevant to the current task gets loaded, so memory never bloats you
 
 ## Installation
 
-### 1. Clone and build
+### Option 1: One-line install (recommended)
 
-```bash
-git clone https://github.com/etwsentwNino/claude-memory-mcp.git
-cd claude-memory-mcp
-npm install
-npm run build
-```
+No clone, no build step. Add this to `~/.claude/settings.json`:
 
-### Alternatively: Use via npx (no clone required)
-
-In `~/.claude/settings.json`:
 ```json
 {
   "mcpServers": {
     "claude-memory": {
       "command": "npx",
-      "args": ["-y", "claude-memory-mcp"]
+      "args": ["-y", "github:ninodinoo/claude-memory-mcp"]
     }
   }
 }
 ```
 
-### 2. Register the plugin in Claude Code
+That's it. Claude Code will download, build, and run the server automatically on first use.
 
-Open (or create) `~/.claude/settings.json` and add the `mcpServers` entry:
+---
+
+### Option 2: Manual install (for development or offline use)
+
+```bash
+git clone https://github.com/ninodinoo/claude-memory-mcp.git
+cd claude-memory-mcp
+npm install
+npm run build
+```
+
+Then add to `~/.claude/settings.json`:
 
 ```json
 {
@@ -79,19 +82,13 @@ Open (or create) `~/.claude/settings.json` and add the `mcpServers` entry:
 }
 ```
 
-Replace `/absolute/path/to/claude-memory-mcp` with the actual path where you cloned the repo.
+**Windows:** `"args": ["C:/Users/yourname/claude-memory-mcp/dist/index.js"]`
 
-**Windows example:**
-```json
-"args": ["C:/Users/yourname/claude-memory-mcp/dist/index.js"]
-```
+**macOS / Linux:** `"args": ["/home/yourname/claude-memory-mcp/dist/index.js"]`
 
-**macOS / Linux example:**
-```json
-"args": ["/home/yourname/claude-memory-mcp/dist/index.js"]
-```
+---
 
-### 3. Restart Claude Code
+### 2. Restart Claude Code
 
 After saving `settings.json`, restart Claude Code. The plugin is now active and Claude has access to all memory tools.
 
