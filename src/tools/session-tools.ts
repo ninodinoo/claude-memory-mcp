@@ -126,7 +126,7 @@ export function registerSessionTools(server: McpServer): void {
 
 async function compressOldSessions(olderThanDays: number): Promise<number> {
   const topics = await listTopics();
-  const sessionTopics = topics.filter((t) => t.startsWith("sessions/") && !t.includes("archive"));
+  const sessionTopics = topics.filter((t) => t.startsWith("sessions/") && !t.startsWith("sessions/archive"));
 
   if (sessionTopics.length === 0) return 0;
 

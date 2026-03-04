@@ -107,8 +107,8 @@ export function registerMemoryTools(server: McpServer): void {
       inputSchema: z.object({
         topic: z.string().describe("Thema / Pfad, z.B. 'decisions', 'architecture', 'entities/UserService'"),
         content: z.string().describe("Der zu speichernde Markdown-Inhalt"),
-        tags: z.array(z.string()).optional().describe("Optionale Schlagwörter zur Kategorisierung"),
-        mode: z.enum(["write", "append", "delete"]).optional().default("write").describe("write: überschreiben, append: anhängen, delete: löschen"),
+        tags: z.array(z.string()).default([]).describe("Optionale Schlagwörter zur Kategorisierung"),
+        mode: z.enum(["write", "append", "delete"]).default("write").describe("write: überschreiben, append: anhängen, delete: löschen"),
       }),
     },
     async ({ topic, content, tags, mode }) => {

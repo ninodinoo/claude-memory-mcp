@@ -15,7 +15,7 @@ export function registerSearchTools(server: McpServer): void {
       inputSchema: z.object({
         query: z.string().describe("Suchbegriff (case-insensitive)"),
         maxResults: z.number().int().min(1).max(50).default(5).describe("Maximale Anzahl Ergebnisse"),
-        mode: z.enum(["search", "suggest"]).optional().default("search").describe("search: Volltextsuche, suggest: Relevanz-basierte Vorschläge für eine Aufgabe"),
+        mode: z.enum(["search", "suggest"]).default("search").describe("search: Volltextsuche, suggest: Relevanz-basierte Vorschläge für eine Aufgabe"),
       }),
     },
     async ({ query, maxResults, mode }) => {

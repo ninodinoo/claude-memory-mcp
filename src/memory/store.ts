@@ -56,7 +56,6 @@ export async function touchEntry(topic: string): Promise<void> {
   const entry = await readEntry(topic);
   if (!entry) return;
   entry.meta.accessCount += 1;
-  entry.meta.updated = new Date().toISOString();
   const file = topicToPath(topic);
   await fs.writeFile(file, serializeEntry(entry), "utf-8");
   await updateIndex(topic, entry.meta.tags);
